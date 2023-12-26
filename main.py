@@ -1,54 +1,39 @@
+from pptx import Presentation
 import os
-import cv2
 import csv
-from PIL import ImageFont, ImageDraw, Image  
-import numpy as np
+def edit_powerpoint_text(pptx_file_path, old_text, new_text):
+    presentation = Presentation(pptx_file_path)
+    for slide in presentation.slides:
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                text_frame = shape.text_frame
+                for paragraph in text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if old_text in run.text:
+                            run.text = run.text.replace(old_text, new_text)
+    output_pptx = os.path.join("output", f"{new_text}.pptx")
+    presentation.save(output_pptx)
 
-list_of_names = []
-list_of_dept = []
-list_of_yr = []
+if __name__ == "__main__":
+    
+    os.makedirs("output", exist_ok=True)
 
+    # change this with the path of the ppt template
+    pptx_file_path = "template.pptx"
 
-def delete_old_data():
-   for i in os.listdir("generated certificates/"):
-      os.remove("generated certificates/{}".format(i))
+    # change this with the path of the file having student names
+    student_names_csv = "file_path.csv"
 
-
-def cleanup_data():
-   with open("name data.csv", "r", newline="\n") as fil:
-      line=csv.reader(fil)
-      for i in line:
-         list_of_names.append(i[0].strip())
-
-
-def generate_certificates():
-   counter=0
-   for i in list_of_names:
-      image = cv2.imread("certificate template.jpg")
-      cv2_im_rgb = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-      pil_im = Image.fromarray(cv2_im_rgb)  
-      draw = ImageDraw.Draw(pil_im)  
-      font = ImageFont.truetype("C:\Windows\Fonts\BellB.ttf", 80)  
-      isp=470      #image_start_in_px (depends on template)
-      iep=1535     #image_end_in_px (depends on template)
-      y_axis=705
-      if len(i) >= 15:
-         mf=27+len(i)-2    #27 is obtained by trial and error method
-      else:
-         mf=27+ len(i)     #27 is obtained by trial and error method
-      draw.text((int((isp+iep-(len(i)*mf))/2),y_axis), i.strip(), font=font, fill="#ffffff", align="right")  
-      cv2_im_processed = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)  
-      cv2.imwrite("generated certificates/{}.jpg".format(i.strip()), cv2_im_processed)  
-      print("Processing {} / {}".format(counter + 1,len(list_of_names)))
-      counter+=1
-      
-def main():
-   delete_old_data()
-   cleanup_data()
-   generate_certificates()
+    # change this with the text that is to be replaced with the student's name
+    text_to_be_replaced = "text_to_be_replaced"
+    
+    with open(student_names_csv, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                edit_powerpoint_text(pptx_file_path, text_to_be_replaced, row[0])
 
 
-
-if __name__ == '__main__':
-   main()
+# After this run the following commands in the terminal:
+# cd "Certificate Generator"
+# ppt2pdf dir output
 
